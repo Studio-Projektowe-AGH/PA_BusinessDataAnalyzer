@@ -1,4 +1,4 @@
-name := """Profile_Service"""
+name := """Statistics_Service"""
 
 version := "1.0-SNAPSHOT"
 
@@ -30,6 +30,11 @@ libraryDependencies += "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.13"
 libraryDependencies += "org.jboss.resteasy" % "resteasy-jackson2-provider" % "3.0.11.Final"
 
 libraryDependencies += "com.nimbusds" % "nimbus-jose-jwt" % "2.22.1"
+
+libraryDependencies += "joda-time" % "joda-time" % "2.8.1"
+
+libraryDependencies += "org.json" % "json" % "20141113"
+
 
 
 fork in run := true

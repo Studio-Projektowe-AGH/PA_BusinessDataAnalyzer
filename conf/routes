@@ -3,19 +3,13 @@
 # ~~~~
 
 # Home page
-GET           /                                 controllers.Application.index()
+GET        /                                    controllers.Application.index()
 
 # Accessing business user profile
-GET           /profiles/business/:userId        controllers.BusinessUserProfileController.getProfile(userId)
-POST          /profiles/business/:userId        controllers.BusinessUserProfileController.updateProfile(userId)
-DELETE        /profiles/business/:userId        controllers.BusinessUserProfileController.deleteProfile(userId)
-PUT           /profiles/business/:userId        controllers.BusinessUserProfileController.updateProfile(userId)
+GET        /business_stats/all/:userId        controllers.BusinessStatsController.getAll(userId)
+POST       /business_stats/value/:userId        controllers.BusinessStatsController.getValue(userId)
+POST       /business_stats/ratio/:userId        controllers.BusinessStatsController.getRatio(userId)
 
-# Accessing individual user profile
-GET           /profiles/individual/:userId        controllers.IndividualUserProfileController.getProfile(userId)
-POST          /profiles/individual/:userId        controllers.IndividualUserProfileController.updateProfile(userId)
-DELETE        /profiles/individual/:userId        controllers.IndividualUserProfileController.deleteProfile(userId)
-PUT           /profiles/individual/:userId        controllers.IndividualUserProfileController.updateProfile(userId)
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                     controllers.Assets.at(path="/public", file)
+GET        /assets/*file                        controllers.Assets.at(path="/public", file)

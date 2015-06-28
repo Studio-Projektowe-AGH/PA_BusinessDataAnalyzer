@@ -11,8 +11,7 @@ import java.net.UnknownHostException;
  * Created by Kris on 2015-05-07.
  */
 public class DBServicesProvider {
-    static DBBusinessProfileService dbBusinessProfileService = null;
-    static DBIndividualProfileService dbIndividualProfileService = null;
+    static DBVisitDAO dbVisitDAO = null;
     static MongoClientURI mongoClientURI;
     static MongoClient mongoClient;
     static Morphia morphia;
@@ -33,17 +32,11 @@ public class DBServicesProvider {
         }
     }
 
-    public static DBBusinessProfileService getDbBusinessProfileService() {
-        if (dbBusinessProfileService == null) {
-            dbBusinessProfileService = new DBBusinessProfileService(mongoClient, morphia, dbName);
+    public static DBVisitDAO getDbVisitDAO() {
+        if (dbVisitDAO == null) {
+            dbVisitDAO = new DBVisitDAO(mongoClient, morphia, dbName);
         }
-        return dbBusinessProfileService;
+        return dbVisitDAO;
     }
 
-    public static DBIndividualProfileService getDbIndividualProfileService() {
-        if (dbIndividualProfileService == null) {
-            dbIndividualProfileService = new DBIndividualProfileService(mongoClient, morphia, dbName);
-        }
-        return dbIndividualProfileService;
-    }
 }
