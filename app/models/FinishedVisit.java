@@ -59,4 +59,17 @@ public class FinishedVisit {
     public int getRating() {
         return rating;
     }
+
+    @Override
+    public String toString() {
+        return "FinishedVisit{" +
+                "id=" + id +
+                ", user_id='" + user_id + '\'' +
+                ", club_id='" + club_id + '\'' +
+                ", visit_start=" + visit_start +
+                ", visit_end=" + visit_end +
+                ", qr_scanned=" + qr_scanned +
+                ", rating=" + rating +
+                '}';
+    }
 }

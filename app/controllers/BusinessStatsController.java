@@ -75,7 +75,7 @@ public class BusinessStatsController extends Controller {
             FinishedVisit f = (FinishedVisit) q.get();
             if (f == null)
                 throw new Exception(Json.newObject().put("status", "error").put("reason", "there are no stats for this club in specified time range, sorry.").toString());
-            return new DateTime(((FinishedVisit) q.get()).getVisit_start());
+            return new DateTime(f.getVisit_start() * 1000);
         }
         if (s.length() == 10)
             s += " 00:00";
@@ -108,7 +108,6 @@ public class BusinessStatsController extends Controller {
         DateTime toGlobal;
         try {
             fromGlobal = getDate(jsonBody.get("date_from").asText(), club_id);
-            System.out.println("date from is " + fromGlobal);
             toGlobal = getDate(jsonBody.get("date_to").asText(), club_id);
         } catch (Exception ex) {
             throw new Exception(Json.newObject().put("status", "error").put("reason", "bad date format").toString());
@@ -157,10 +156,11 @@ public class BusinessStatsController extends Controller {
         try {
             Tuple tuptup = getStatListForValue(searchedValue, fromGlobal, toGlobal, aggregate, club_id);
             return tuptup == null ? badRequest(Json.newObject().put("status", "error").put("reason", "unsupported value type")) : wrapJSON(tuptup.val, tuptup.time);
-        }catch(NoSuchFieldException ex){
+        } catch (NoSuchFieldException ex) {
             return notFound(Json.newObject().put("status", "error").put("reason", "there are no stats for this club in specified time range, sorry.").toString());
         }
     }
+
     @BodyParser.Of(BodyParser.Json.class)
     public static Result getRatio(String club_id) {
         JsonNode jsonBody = request().body().asJson();
@@ -184,12 +184,12 @@ public class BusinessStatsController extends Controller {
 
         try {
             Tuple topTup = getStatListForValue(numerator, fromGlobal, toGlobal, aggregate, club_id);
-            if (topTup.val == null) {
+            if (topTup == null) {
                 return badRequest(Json.newObject().put("status", "error").put("reason", "unsupported numerator type"));
             }
             Tuple botTup = getStatListForValue(denominator, fromGlobal, toGlobal, aggregate, club_id);
-            if (botTup.val == null) {
-                return badRequest(Json.newObject().put("status", "error").put("reason", "unsupported numerator type"));
+            if (botTup == null) {
+                return badRequest(Json.newObject().put("status", "error").put("reason", "unsupported denominator type"));
             }
             if (topTup.val.size() != botTup.val.size())
                 return internalServerError(Json.newObject().put("status", "error").put("reason", "shit happens, sorry"));
@@ -202,8 +202,7 @@ public class BusinessStatsController extends Controller {
             }
             return wrapJSON(ratios, topTup.time);
 
-        }
-        catch (NoSuchFieldException ex){
+        } catch (NoSuchFieldException ex) {
             return notFound(Json.newObject().put("status", "error").put("reason", "there are no stats for this club, sorry.").toString());
         }
     }
@@ -350,8 +349,8 @@ public class BusinessStatsController extends Controller {
                 .find(FinishedVisit.class)
                 .field("club_id").equal(clubId)
 //                .filter("visit_start >=", from.getMillis())
-                .field("visit_start").greaterThanOrEq(from.getMillis()/1000)
-                .field("visit_start").lessThanOrEq(to.getMillis()/1000)
+                .field("visit_start").greaterThanOrEq(from.getMillis() / 1000)
+                .field("visit_start").lessThanOrEq(to.getMillis() / 1000)
                 .asList();
     }
 
@@ -366,9 +365,9 @@ public class BusinessStatsController extends Controller {
         DBObject query = QueryBuilder.start("visit_start")
                 .greaterThanEquals(from.getMillis() / 1000)
                 .lessThanEquals(to.getMillis() / 1000)
-                .and(new BasicDBObject("club_id", clubId))
+                .put("club_id").is(clubId)
+//                .and(new BasicDBObject("club_id", clubId))
                 .get();
-
         DBCollection myCol = dbVisitDAO.getDatastore().getCollection(FinishedVisit.class);
         return (myCol.distinct("user_id", query).size());
     }
