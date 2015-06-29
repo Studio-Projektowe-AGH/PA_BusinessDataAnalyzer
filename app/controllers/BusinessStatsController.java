@@ -72,7 +72,7 @@ public class BusinessStatsController extends Controller {
             q.field("club_id").equal(club_id);
             q.order("visit_start");
             q.limit(1);
-            FinishedVisit f = (FinishedVisit) q.get();
+            FinishedVisit f = (FinishedVisit) q.get(); 
             if (f == null)
                 throw new Exception(Json.newObject().put("status", "error").put("reason", "there are no stats for this club in specified time range, sorry.").toString());
             return new DateTime(f.getVisit_start() * 1000);
