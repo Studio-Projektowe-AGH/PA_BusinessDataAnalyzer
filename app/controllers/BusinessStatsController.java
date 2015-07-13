@@ -51,7 +51,7 @@ public class BusinessStatsController extends Controller {
 
     public static Result getAll(String userId) {
 
-        List<FinishedVisit> visits = dbVisitDAO.getDatastore().find(FinishedVisit.class).field("club_id").equal(userId).asList();
+        List<FinishedVisit> visits = dbVisitDAO.getDatastore().find(FinishedVisit.class).field("item_id").equal(userId).asList();
 
         if (!visits.isEmpty()) {
             String s = "";
@@ -64,15 +64,15 @@ public class BusinessStatsController extends Controller {
         return notFound("no club with this id");
     }
 
-    private static DateTime getDate(String s, String club_id) throws Exception {
+    private static DateTime getDate(String s, String item_id) throws Exception {
 
         if (s.equals("big_bang")) {
 
             Query q = dbVisitDAO.getDatastore().createQuery(FinishedVisit.class);
-            q.field("club_id").equal(club_id);
+            q.field("item_id").equal(item_id);
             q.order("visit_start");
             q.limit(1);
-            FinishedVisit f = (FinishedVisit) q.get(); 
+            FinishedVisit f = (FinishedVisit) q.get();
             if (f == null)
                 throw new Exception(Json.newObject().put("status", "error").put("reason", "there are no stats for this club in specified time range, sorry.").toString());
             return new DateTime(f.getVisit_start() * 1000);
@@ -102,13 +102,13 @@ public class BusinessStatsController extends Controller {
         }
     }
 
-    private static void filterRequest(JsonNode jsonBody, String club_id) throws Exception {
+    private static void filterRequest(JsonNode jsonBody, String item_id) throws Exception {
 
         DateTime fromGlobal;
         DateTime toGlobal;
         try {
-            fromGlobal = getDate(jsonBody.get("date_from").asText(), club_id);
-            toGlobal = getDate(jsonBody.get("date_to").asText(), club_id);
+            fromGlobal = getDate(jsonBody.get("date_from").asText(), item_id);
+            toGlobal = getDate(jsonBody.get("date_to").asText(), item_id);
         } catch (Exception ex) {
             throw new Exception(Json.newObject().put("status", "error").put("reason", "bad date format").toString());
         }
@@ -133,16 +133,16 @@ public class BusinessStatsController extends Controller {
     }
 
     @BodyParser.Of(BodyParser.Json.class)
-    public static Result getValue(String club_id) {
+    public static Result getValue(String item_id) {
 
 
         JsonNode jsonBody = request().body().asJson();
         DateTime fromGlobal;
         DateTime toGlobal;
         try {
-            filterRequest(jsonBody, club_id);
-            fromGlobal = getDate(jsonBody.get("date_from").asText(), club_id);
-            toGlobal = getDate(jsonBody.get("date_to").asText(), club_id);
+            filterRequest(jsonBody, item_id);
+            fromGlobal = getDate(jsonBody.get("date_from").asText(), item_id);
+            toGlobal = getDate(jsonBody.get("date_to").asText(), item_id);
         } catch (Exception ex) {
             return badRequest(ex.getMessage());
         }
@@ -154,7 +154,7 @@ public class BusinessStatsController extends Controller {
             return badRequest(Json.newObject().put("status", "error").put("reason", "did you specify value?").toString());
         }
         try {
-            Tuple tuptup = getStatListForValue(searchedValue, fromGlobal, toGlobal, aggregate, club_id);
+            Tuple tuptup = getStatListForValue(searchedValue, fromGlobal, toGlobal, aggregate, item_id);
             return tuptup == null ? badRequest(Json.newObject().put("status", "error").put("reason", "unsupported value type")) : wrapJSON(tuptup.val, tuptup.time);
         } catch (NoSuchFieldException ex) {
             return notFound(Json.newObject().put("status", "error").put("reason", "there are no stats for this club in specified time range, sorry.").toString());
@@ -162,14 +162,14 @@ public class BusinessStatsController extends Controller {
     }
 
     @BodyParser.Of(BodyParser.Json.class)
-    public static Result getRatio(String club_id) {
+    public static Result getRatio(String item_id) {
         JsonNode jsonBody = request().body().asJson();
         DateTime fromGlobal;
         DateTime toGlobal;
         try {
-            filterRequest(jsonBody, club_id);
-            fromGlobal = getDate(jsonBody.get("date_from").asText(), club_id);
-            toGlobal = getDate(jsonBody.get("date_to").asText(), club_id);
+            filterRequest(jsonBody, item_id);
+            fromGlobal = getDate(jsonBody.get("date_from").asText(), item_id);
+            toGlobal = getDate(jsonBody.get("date_to").asText(), item_id);
         } catch (Exception ex) {
             return badRequest(ex.getMessage());
         }
@@ -183,11 +183,11 @@ public class BusinessStatsController extends Controller {
         String aggregate = jsonBody.get("aggregate").asText();
 
         try {
-            Tuple topTup = getStatListForValue(numerator, fromGlobal, toGlobal, aggregate, club_id);
+            Tuple topTup = getStatListForValue(numerator, fromGlobal, toGlobal, aggregate, item_id);
             if (topTup == null) {
                 return badRequest(Json.newObject().put("status", "error").put("reason", "unsupported numerator type"));
             }
-            Tuple botTup = getStatListForValue(denominator, fromGlobal, toGlobal, aggregate, club_id);
+            Tuple botTup = getStatListForValue(denominator, fromGlobal, toGlobal, aggregate, item_id);
             if (botTup == null) {
                 return badRequest(Json.newObject().put("status", "error").put("reason", "unsupported denominator type"));
             }
@@ -212,7 +212,7 @@ public class BusinessStatsController extends Controller {
         return Float.valueOf(twoDForm.format(d));
     }
 
-    private static Tuple getStatListForValue(String value, DateTime fromGlobal, DateTime toGlobal, String aggregate, String club_id) throws NoSuchFieldException {
+    private static Tuple getStatListForValue(String value, DateTime fromGlobal, DateTime toGlobal, String aggregate, String item_id) throws NoSuchFieldException {
 
         boolean all_time = aggregate.equals("all_time");
 
@@ -226,13 +226,13 @@ public class BusinessStatsController extends Controller {
                 List<Float> l = new ArrayList<>();
                 List<Long> t = new ArrayList<>();
                 if (all_time) {
-                    l.add(calculateTotalVisits(fromGlobal, toGlobal, club_id));
+                    l.add(calculateTotalVisits(fromGlobal, toGlobal, item_id));
                     t.add(fromGlobal.getMillis());
                 } else {
 
                     while (to.isBefore(incrementDateBy(toGlobal, aggregate))) {
 
-                        l.add(calculateTotalVisits(from, to, club_id));
+                        l.add(calculateTotalVisits(from, to, item_id));
                         t.add(from.getMillis());
 
                         from = to;
@@ -247,13 +247,13 @@ public class BusinessStatsController extends Controller {
                 List<Long> t = new ArrayList<>();
 
                 if (all_time) {
-                    l.add(calculateUniqueVisits(fromGlobal, toGlobal, club_id));
+                    l.add(calculateUniqueVisits(fromGlobal, toGlobal, item_id));
                     t.add(fromGlobal.getMillis());
                 } else {
 
                     while (to.isBefore(incrementDateBy(toGlobal, aggregate))) {
 
-                        l.add(calculateUniqueVisits(from, to, club_id));
+                        l.add(calculateUniqueVisits(from, to, item_id));
                         t.add(from.getMillis());
                         from = to;
                         to = incrementDateBy(to, aggregate);
@@ -269,7 +269,7 @@ public class BusinessStatsController extends Controller {
 
                 if (all_time) {
                     int sum = 0;
-                    for (FinishedVisit o : getVisitsList(fromGlobal, toGlobal, club_id)) {
+                    for (FinishedVisit o : getVisitsList(fromGlobal, toGlobal, item_id)) {
                         sum += o.getQr_scanned();
                     }
                     l.add((float) sum);
@@ -280,7 +280,7 @@ public class BusinessStatsController extends Controller {
                     while (to.isBefore(incrementDateBy(toGlobal, aggregate))) {
 
                         int sum = 0;
-                        for (FinishedVisit o : getVisitsList(from, to, club_id)) {
+                        for (FinishedVisit o : getVisitsList(from, to, item_id)) {
                             sum += o.getQr_scanned();
                         }
                         l.add((float) sum);
@@ -298,7 +298,7 @@ public class BusinessStatsController extends Controller {
 
 
                 if (all_time) {
-                    l = calculateAvgRating(fromGlobal, toGlobal, club_id);
+                    l = calculateAvgRating(fromGlobal, toGlobal, item_id);
                     t.add(fromGlobal.getMillis());
                     return new Tuple(l, t);
 
@@ -306,7 +306,7 @@ public class BusinessStatsController extends Controller {
 
                     while (to.isBefore(incrementDateBy(toGlobal, aggregate))) {
 
-                        l.addAll(calculateAvgRating(from, to, club_id));
+                        l.addAll(calculateAvgRating(from, to, item_id));
                         t.add(from.getMillis());
                         from = to;
                         to = incrementDateBy(to, aggregate);
@@ -320,14 +320,14 @@ public class BusinessStatsController extends Controller {
                 List<Float> l = new ArrayList<>();
 
                 if (all_time) {
-                    l = calculateAvgVisitLength(fromGlobal, toGlobal, club_id);
+                    l = calculateAvgVisitLength(fromGlobal, toGlobal, item_id);
                     t.add(fromGlobal.getMillis());
                     return new Tuple(l, t);
                 } else {
 
                     while (to.isBefore(incrementDateBy(toGlobal, aggregate))) {
 
-                        l.addAll(calculateAvgVisitLength(from, to, club_id));
+                        l.addAll(calculateAvgVisitLength(from, to, item_id));
                         t.add(from.getMillis());
                         from = to;
                         to = incrementDateBy(to, aggregate);
@@ -347,7 +347,7 @@ public class BusinessStatsController extends Controller {
 
         return dbVisitDAO.getDatastore()
                 .find(FinishedVisit.class)
-                .field("club_id").equal(clubId)
+                .field("item_id").equal(clubId)
 //                .filter("visit_start >=", from.getMillis())
                 .field("visit_start").greaterThanOrEq(from.getMillis() / 1000)
                 .field("visit_start").lessThanOrEq(to.getMillis() / 1000)
@@ -365,8 +365,8 @@ public class BusinessStatsController extends Controller {
         DBObject query = QueryBuilder.start("visit_start")
                 .greaterThanEquals(from.getMillis() / 1000)
                 .lessThanEquals(to.getMillis() / 1000)
-                .put("club_id").is(clubId)
-//                .and(new BasicDBObject("club_id", clubId))
+                .put("item_id").is(clubId)
+//                .and(new BasicDBObject("item_id", clubId))
                 .get();
         DBCollection myCol = dbVisitDAO.getDatastore().getCollection(FinishedVisit.class);
         return (myCol.distinct("user_id", query).size());
